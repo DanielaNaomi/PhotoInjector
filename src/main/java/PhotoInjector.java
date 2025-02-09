@@ -10,9 +10,7 @@ import gearth.extensions.ExtensionInfo;
 import gearth.protocol.HMessage;
 import gearth.protocol.HPacket;
 import javafx.application.Platform;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -28,7 +26,7 @@ import java.util.List;
 @ExtensionInfo(
         Title = "PhotoInjector",
         Description = "Inject photos into retros",
-        Version = "1.1",
+        Version = "1.2",
         Author = "DanielaNaomi"
 )
 
@@ -44,6 +42,11 @@ public class PhotoInjector extends ExtensionForm {
     public ProgressBar bar;
     public CheckBox activate_cbx;
     public CheckBox always_on_top_cbx;
+    public RadioButton leftdirection;
+    public ToggleGroup directions;
+    public RadioButton rightdirection;
+    public Button buttoninject;
+    private boolean isrunning = false;
     private int counter = 0;
     private BufferedImage currentImage;
 
@@ -190,24 +193,31 @@ public class PhotoInjector extends ExtensionForm {
     }
 
     public void injectphoto() {
-        if (activate_cbx.isSelected()) {
-            if (currentImage == null) {
-                return;
-            }
+        if (!activate_cbx.isSelected()) {
+            return;
+        }
 
-            if (startcoords.equals("") && initialCoords.equals("")) {
-                return;
-            }
+        if (currentImage == null || startcoords.equals("") || initialCoords.equals("")) {
+            return;
+        }
+
+        if (!isrunning) {
+            isrunning = true;
+            buttoninject.setText("Stop");
 
             int gridWidth = Integer.parseInt(width.getText());
             int gridHeight = Integer.parseInt(height.getText());
             BufferedImage resizedImage = resizeImage(currentImage, PART_SIZE * gridWidth, PART_SIZE * gridHeight);
             List<BufferedImage> parts = splitImage(resizedImage, gridWidth, gridHeight);
 
-            new Thread(() -> {
+            Thread processThread = new Thread(() -> {
                 try {
                     int totalParts = parts.size();
                     for (int i = 0; i < totalParts; i++) {
+                        if (!isrunning) {
+                            break;
+                        }
+
                         BufferedImage part = parts.get(i);
                         File tempFile = null;
                         try {
@@ -215,7 +225,6 @@ public class PhotoInjector extends ExtensionForm {
                             tempFile.deleteOnExit();
                             ImageIO.write(part, "png", tempFile);
                             byte[] partBytes = Files.readAllBytes(tempFile.toPath());
-
                             HPacket renderPacket = createPacket(partBytes);
                             sendToServer(renderPacket);
 
@@ -231,19 +240,32 @@ public class PhotoInjector extends ExtensionForm {
                             }
                         }
                     }
-
-                    Platform.runLater(() -> {
-                        startcoords = "";
-                        initialCoords = "";
-                        counter = 0;
-                        bar.setProgress(0);
-                        activate_cbx.setSelected(false);
-                    });
-
                 } catch (IOException | InterruptedException e) {
                     e.printStackTrace();
                 }
-            }).start();
+
+                Platform.runLater(() -> {
+                    startcoords = "";
+                    initialCoords = "";
+                    counter = 0;
+                    bar.setProgress(0);
+                    activate_cbx.setSelected(false);
+                    buttoninject.setText("Inject");
+                    isrunning = false;
+                });
+            });
+
+            processThread.start();
+        } else {
+            Platform.runLater(() -> {
+                buttoninject.setText("Inject");
+                startcoords = "";
+                initialCoords = "";
+                counter = 0;
+                bar.setProgress(0);
+                activate_cbx.setSelected(false);
+                isrunning = false;
+            });
         }
     }
 
@@ -298,15 +320,26 @@ public class PhotoInjector extends ExtensionForm {
         int l2 = Integer.parseInt(lParts[1]);
 
         if (direction.equals("l")) {
-            w2 += 1;
-            l1 -= 4;
-            l2 += 2;
+            if (leftdirection.isSelected()) {
+                w2 -= 1;
+                l1 += 4;
+                l2 -= 2;
+            } else if (rightdirection.isSelected()) {
+                w2 += 1;
+                l1 -= 4;
+                l2 += 2;
+            }
             startcoords = String.format(":w=%d,%d l=%d,%d l", w1, w2, l1, l2);
-        }
-        if (direction.equals("r")) {
-            w1 -= 2;
-            l1 += 12;
-            l2 += 6;
+        } else if (direction.equals("r")) {
+            if (leftdirection.isSelected()) {
+                w1 += 2;
+                l1 -= 12;
+                l2 -= 6;
+            } else if (rightdirection.isSelected()) {
+                w1 -= 2;
+                l1 += 12;
+                l2 += 6;
+            }
             startcoords = String.format(":w=%d,%d l=%d,%d r", w1, w2, l1, l2);
         }
     }
@@ -345,19 +378,34 @@ public class PhotoInjector extends ExtensionForm {
     private List<BufferedImage> splitImage(BufferedImage image, int gridWidth, int gridHeight) {
         List<BufferedImage> parts = new ArrayList<>();
 
-        for (int row = gridHeight - 1; row >= 0; row--) {
-            for (int col = gridWidth - 1; col >= 0; col--) {
-                int x = col * PART_SIZE;
-                int y = row * PART_SIZE;
+        if (leftdirection.isSelected()) {
+            for (int row = gridHeight - 1; row >= 0; row--) {
+                for (int col = 0; col < gridWidth; col++) {
+                    int x = col * PART_SIZE;
+                    int y = row * PART_SIZE;
 
-                BufferedImage part = new BufferedImage(PART_SIZE, PART_SIZE, image.getType());
-                Graphics2D g2d = part.createGraphics();
-                g2d.drawImage(image.getSubimage(x, y, PART_SIZE, PART_SIZE), 0, 0, null);
-                g2d.dispose();
+                    BufferedImage part = new BufferedImage(PART_SIZE, PART_SIZE, image.getType());
+                    Graphics2D g2d = part.createGraphics();
+                    g2d.drawImage(image.getSubimage(x, y, PART_SIZE, PART_SIZE), 0, 0, null);
+                    g2d.dispose();
+                    parts.add(part);
+                }
+            }
+        } else if (rightdirection.isSelected()) {
+            for (int row = gridHeight - 1; row >= 0; row--) {
+                for (int col = gridWidth - 1; col >= 0; col--) {
+                    int x = col * PART_SIZE;
+                    int y = row * PART_SIZE;
 
-                parts.add(part);
+                    BufferedImage part = new BufferedImage(PART_SIZE, PART_SIZE, image.getType());
+                    Graphics2D g2d = part.createGraphics();
+                    g2d.drawImage(image.getSubimage(x, y, PART_SIZE, PART_SIZE), 0, 0, null);
+                    g2d.dispose();
+                    parts.add(part);
+                }
             }
         }
+
         return parts;
     }
 
