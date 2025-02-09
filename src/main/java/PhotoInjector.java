@@ -28,7 +28,7 @@ import java.util.List;
 @ExtensionInfo(
         Title = "PhotoInjector",
         Description = "Inject photos into retros",
-        Version = "1.0",
+        Version = "1.1",
         Author = "DanielaNaomi"
 )
 
@@ -290,23 +290,32 @@ public class PhotoInjector extends ExtensionForm {
         String[] parts = startcoords.split(" ");
         String[] wParts = parts[0].split("=")[1].split(",");
         String[] lParts = parts[1].split("=")[1].split(",");
+        String direction = parts[2];
 
         int w1 = Integer.parseInt(wParts[0]);
         int w2 = Integer.parseInt(wParts[1]);
         int l1 = Integer.parseInt(lParts[0]);
         int l2 = Integer.parseInt(lParts[1]);
 
-        w2 += 1;
-        l1 -= 5;
-        l2 += 3;
-
-        startcoords = String.format(":w=%d,%d l=%d,%d l", w1, w2, l1, l2);
+        if (direction.equals("l")) {
+            w2 += 1;
+            l1 -= 4;
+            l2 += 2;
+            startcoords = String.format(":w=%d,%d l=%d,%d l", w1, w2, l1, l2);
+        }
+        if (direction.equals("r")) {
+            w1 -= 2;
+            l1 += 12;
+            l2 += 6;
+            startcoords = String.format(":w=%d,%d l=%d,%d r", w1, w2, l1, l2);
+        }
     }
 
     private void resetToInitialCoords() {
         String[] parts = initialCoords.split(" ");
         String[] wParts = parts[0].split("=")[1].split(",");
         String[] lParts = parts[1].split("=")[1].split(",");
+        String direction = parts[2];
 
         int w1 = Integer.parseInt(wParts[0]);
         int w2 = Integer.parseInt(wParts[1]);
@@ -315,8 +324,14 @@ public class PhotoInjector extends ExtensionForm {
 
         l2 -= 23;
 
-        startcoords = String.format(":w=%d,%d l=%d,%d l", w1, w2, l1, l2);
-        initialCoords = startcoords;
+        if (direction.equals("l")) {
+            startcoords = String.format(":w=%d,%d l=%d,%d l", w1, w2, l1, l2);
+            initialCoords = startcoords;
+        }
+        if (direction.equals("r")) {
+            startcoords = String.format(":w=%d,%d l=%d,%d r", w1, w2, l1, l2);
+            initialCoords = startcoords;
+        }
     }
 
     private BufferedImage resizeImage(BufferedImage originalImage, int targetWidth, int targetHeight) {
