@@ -26,7 +26,7 @@ import java.util.List;
 @ExtensionInfo(
         Title = "PhotoInjector",
         Description = "Inject photos into retros",
-        Version = "1.2",
+        Version = "1.3",
         Author = "DanielaNaomi"
 )
 
@@ -46,9 +46,14 @@ public class PhotoInjector extends ExtensionForm {
     public ToggleGroup directions;
     public RadioButton rightdirection;
     public Button buttoninject;
+    public RadioButton posterfurni;
+    public ToggleGroup furnitype;
+    public RadioButton photofurni;
+    public TextField delay;
     private boolean isrunning = false;
     private int counter = 0;
     private BufferedImage currentImage;
+    public String state = "General";
 
     @Override
     protected void initExtension() {
@@ -89,6 +94,12 @@ public class PhotoInjector extends ExtensionForm {
             }
         });
 
+        delay.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.matches("\\d*")) {
+                delay.setText(newValue.replaceAll("\\D", ""));
+            }
+        });
+
         width.focusedProperty().addListener((observable, oldValue, newValue) -> {
             if (!newValue && width.getText().isEmpty()) {
                 width.setText("0");
@@ -98,6 +109,12 @@ public class PhotoInjector extends ExtensionForm {
         height.focusedProperty().addListener((observable, oldValue, newValue) -> {
             if (!newValue && height.getText().isEmpty()) {
                 height.setText("0");
+            }
+        });
+
+        delay.focusedProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue && delay.getText().isEmpty()) {
+                delay.setText("0");
             }
         });
     }
@@ -231,7 +248,7 @@ public class PhotoInjector extends ExtensionForm {
                             final double progress = (double) (i + 1) / totalParts;
                             Platform.runLater(() -> bar.setProgress(progress));
 
-                            Thread.sleep(2000);
+                            Thread.sleep(Integer.parseInt(delay.getText()));
                         } finally {
                             if (tempFile != null && tempFile.exists()) {
                                 if (!tempFile.delete()) {
@@ -284,10 +301,27 @@ public class PhotoInjector extends ExtensionForm {
     private void OutPlaceObject(HMessage hMessage) {
         if (setcoords_cbx.isSelected()) {
             hMessage.setBlocked(true);
-            hMessage.getPacket().readInteger();
-            hMessage.getPacket().readString();
-            startcoords = hMessage.getPacket().readString();
-            initialCoords = startcoords;
+
+            int initialIndex = hMessage.getPacket().getReadIndex();
+
+            try {
+                hMessage.getPacket().readInteger();
+                hMessage.getPacket().readString();
+                startcoords = hMessage.getPacket().readString();
+                initialCoords = startcoords;
+                state = "Special";
+            } catch (Exception e) {
+                hMessage.getPacket().setReadIndex(initialIndex);
+
+                startcoords = hMessage.getPacket().readString();
+                int index = startcoords.indexOf(':');
+                if (index != -1) {
+                    startcoords = startcoords.substring(index);
+                }
+                initialCoords = startcoords;
+                state = "General";
+            }
+
             setcoords_cbx.setSelected(false);
         }
     }
@@ -298,7 +332,12 @@ public class PhotoInjector extends ExtensionForm {
             hMessage.getPacket().readInteger();
             hMessage.getPacket().readInteger();
             idfurni = hMessage.getPacket().readInteger();
-            sendToServer(new HPacket("PlaceObject", HMessage.Direction.TOSERVER, idfurni, "i", startcoords));
+            if (state.equals("General")) {
+                sendToServer(new HPacket("PlaceObject", HMessage.Direction.TOSERVER, idfurni + " " + startcoords + " "));
+            }
+            else if (state.equals("Special")) {
+                sendToServer(new HPacket("PlaceObject", HMessage.Direction.TOSERVER, idfurni, "i", startcoords));
+            }
         }
     }
 
@@ -320,25 +359,47 @@ public class PhotoInjector extends ExtensionForm {
         int l2 = Integer.parseInt(lParts[1]);
 
         if (direction.equals("l")) {
-            if (leftdirection.isSelected()) {
-                w2 -= 1;
-                l1 += 4;
-                l2 -= 2;
-            } else if (rightdirection.isSelected()) {
-                w2 += 1;
-                l1 -= 4;
-                l2 += 2;
+            if (posterfurni.isSelected()) {
+                if (leftdirection.isSelected()) {
+                    w2 -= 1;
+                    l1 += 4;
+                    l2 -= 2;
+                } else if (rightdirection.isSelected()) {
+                    w2 += 1;
+                    l1 -= 4;
+                    l2 += 2;
+                }
+            }
+            else if (photofurni.isSelected()) {
+                if (leftdirection.isSelected()) {
+                    l1 += 7;
+                    l2 -= 4;
+                } else if (rightdirection.isSelected()) {
+                    l1 -= 7;
+                    l2 += 4;
+                }
             }
             startcoords = String.format(":w=%d,%d l=%d,%d l", w1, w2, l1, l2);
         } else if (direction.equals("r")) {
-            if (leftdirection.isSelected()) {
-                w1 += 2;
-                l1 -= 12;
-                l2 -= 6;
-            } else if (rightdirection.isSelected()) {
-                w1 -= 2;
-                l1 += 12;
-                l2 += 6;
+            if (posterfurni.isSelected()) {
+                if (leftdirection.isSelected()) {
+                    w1 += 2;
+                    l1 -= 12;
+                    l2 -= 6;
+                } else if (rightdirection.isSelected()) {
+                    w1 -= 2;
+                    l1 += 12;
+                    l2 += 6;
+                }
+            }
+            else if (photofurni.isSelected()) {
+                if (leftdirection.isSelected()) {
+                    l1 += 7;
+                    l2 += 4;
+                } else if (rightdirection.isSelected()) {
+                    l1 -= 7;
+                    l2 -= 4;
+                }
             }
             startcoords = String.format(":w=%d,%d l=%d,%d r", w1, w2, l1, l2);
         }
@@ -355,7 +416,12 @@ public class PhotoInjector extends ExtensionForm {
         int l1 = Integer.parseInt(lParts[0]);
         int l2 = Integer.parseInt(lParts[1]);
 
-        l2 -= 23;
+        if (posterfurni.isSelected()) {
+            l2 -= 23;
+        }
+        else if (photofurni.isSelected()) {
+            l2 -= 8;
+        }
 
         if (direction.equals("l")) {
             startcoords = String.format(":w=%d,%d l=%d,%d l", w1, w2, l1, l2);
