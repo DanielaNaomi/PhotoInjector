@@ -4,6 +4,7 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.image.BufferedImage;
+import java.awt.RenderingHints;
 import javax.imageio.ImageIO;
 import gearth.extensions.ExtensionForm;
 import gearth.extensions.ExtensionInfo;
@@ -21,12 +22,13 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 @ExtensionInfo(
         Title = "PhotoInjector",
         Description = "Inject photos into retros",
-        Version = "1.3",
+        Version = "1.4",
         Author = "DanielaNaomi"
 )
 
@@ -50,6 +52,10 @@ public class PhotoInjector extends ExtensionForm {
     public ToggleGroup furnitype;
     public RadioButton photofurni;
     public TextField delay;
+    public RadioButton normalmode;
+    public ToggleGroup injectsmodes;
+    public RadioButton bypassmode;
+    public TextField reducequality;
     private boolean isrunning = false;
     private int counter = 0;
     private BufferedImage currentImage;
@@ -100,6 +106,16 @@ public class PhotoInjector extends ExtensionForm {
             }
         });
 
+        reducequality.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.matches("\\d*")) {
+                reducequality.setText(newValue.replaceAll("\\D", ""));
+            }
+            int value = newValue.isEmpty() ? 0 : Integer.parseInt(newValue);
+            if (value > 100) {
+                reducequality.setText("100");
+            }
+        });
+
         width.focusedProperty().addListener((observable, oldValue, newValue) -> {
             if (!newValue && width.getText().isEmpty()) {
                 width.setText("0");
@@ -117,6 +133,12 @@ public class PhotoInjector extends ExtensionForm {
                 delay.setText("0");
             }
         });
+
+        reducequality.focusedProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue && reducequality.getText().isEmpty()) {
+                reducequality.setText("100");
+            }
+        });
     }
 
     private void setupClipboardShortcut() {
@@ -128,16 +150,33 @@ public class PhotoInjector extends ExtensionForm {
         });
     }
 
+    private BufferedImage reduceImageQuality(BufferedImage originalImage) {
+        double qualityPercent = Double.parseDouble(reducequality.getText()) / 100.0;
+        int newWidth = (int)(originalImage.getWidth() * qualityPercent);
+        int newHeight = (int)(originalImage.getHeight() * qualityPercent);
+
+        BufferedImage resizedImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = resizedImage.createGraphics();
+
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+
+        g2d.drawImage(originalImage, 0, 0, newWidth, newHeight, null);
+        g2d.dispose();
+
+        return resizedImage;
+    }
+
     private void handleClipboardImage() {
         try {
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
             if (clipboard.isDataFlavorAvailable(DataFlavor.imageFlavor)) {
                 java.awt.Image awtImage = (java.awt.Image) clipboard.getData(DataFlavor.imageFlavor);
                 BufferedImage bufferedImage = convertToBufferedImage(awtImage);
-                currentImage = bufferedImage;
+                currentImage = reduceImageQuality(bufferedImage);
 
                 Platform.runLater(() -> {
-                    Image fxImage = convertToFXImage(bufferedImage);
+                    Image fxImage = convertToFXImage(currentImage);
                     imagepath.setImage(fxImage);
                 });
             }
@@ -197,8 +236,8 @@ public class PhotoInjector extends ExtensionForm {
             try {
                 BufferedImage originalImage = ImageIO.read(selectedFile);
                 if (originalImage != null) {
-                    currentImage = originalImage;
-                    Image fxImage = convertToFXImage(originalImage);
+                    currentImage = reduceImageQuality(originalImage);
+                    Image fxImage = convertToFXImage(currentImage);
                     imagepath.setImage(fxImage);
                 } else {
                     System.out.println("Unable to read image file: " + selectedFile.getName());
@@ -334,8 +373,7 @@ public class PhotoInjector extends ExtensionForm {
             idfurni = hMessage.getPacket().readInteger();
             if (state.equals("General")) {
                 sendToServer(new HPacket("PlaceObject", HMessage.Direction.TOSERVER, idfurni + " " + startcoords + " "));
-            }
-            else if (state.equals("Special")) {
+            } else if (state.equals("Special")) {
                 sendToServer(new HPacket("PlaceObject", HMessage.Direction.TOSERVER, idfurni, "i", startcoords));
             }
         }
@@ -369,8 +407,7 @@ public class PhotoInjector extends ExtensionForm {
                     l1 -= 4;
                     l2 += 2;
                 }
-            }
-            else if (photofurni.isSelected()) {
+            } else if (photofurni.isSelected()) {
                 if (leftdirection.isSelected()) {
                     l1 += 7;
                     l2 -= 4;
@@ -391,8 +428,7 @@ public class PhotoInjector extends ExtensionForm {
                     l1 += 12;
                     l2 += 6;
                 }
-            }
-            else if (photofurni.isSelected()) {
+            } else if (photofurni.isSelected()) {
                 if (leftdirection.isSelected()) {
                     l1 += 7;
                     l2 += 4;
@@ -406,31 +442,43 @@ public class PhotoInjector extends ExtensionForm {
     }
 
     private void resetToInitialCoords() {
-        String[] parts = initialCoords.split(" ");
-        String[] wParts = parts[0].split("=")[1].split(",");
-        String[] lParts = parts[1].split("=")[1].split(",");
-        String direction = parts[2];
+        Thread delayThread = new Thread(() -> {
+            try {
+                Thread.sleep(1000);
 
-        int w1 = Integer.parseInt(wParts[0]);
-        int w2 = Integer.parseInt(wParts[1]);
-        int l1 = Integer.parseInt(lParts[0]);
-        int l2 = Integer.parseInt(lParts[1]);
+                String[] parts = initialCoords.split(" ");
+                String[] wParts = parts[0].split("=")[1].split(",");
+                String[] lParts = parts[1].split("=")[1].split(",");
+                String direction = parts[2];
 
-        if (posterfurni.isSelected()) {
-            l2 -= 23;
-        }
-        else if (photofurni.isSelected()) {
-            l2 -= 8;
-        }
+                final int w1 = Integer.parseInt(wParts[0]);
+                final int w2 = Integer.parseInt(wParts[1]);
+                final int l1 = Integer.parseInt(lParts[0]);
+                int l2Final = Integer.parseInt(lParts[1]);
 
-        if (direction.equals("l")) {
-            startcoords = String.format(":w=%d,%d l=%d,%d l", w1, w2, l1, l2);
-            initialCoords = startcoords;
-        }
-        if (direction.equals("r")) {
-            startcoords = String.format(":w=%d,%d l=%d,%d r", w1, w2, l1, l2);
-            initialCoords = startcoords;
-        }
+                if (posterfurni.isSelected()) {
+                    l2Final -= 23;
+                } else if (photofurni.isSelected()) {
+                    l2Final -= 8;
+                }
+
+                final int l2 = l2Final;
+
+                Platform.runLater(() -> {
+                    if (direction.equals("l")) {
+                        startcoords = String.format(":w=%d,%d l=%d,%d l", w1, w2, l1, l2);
+                        initialCoords = startcoords;
+                    }
+                    if (direction.equals("r")) {
+                        startcoords = String.format(":w=%d,%d l=%d,%d r", w1, w2, l1, l2);
+                        initialCoords = startcoords;
+                    }
+                });
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+        delayThread.start();
     }
 
     private BufferedImage resizeImage(BufferedImage originalImage, int targetWidth, int targetHeight) {
@@ -476,9 +524,30 @@ public class PhotoInjector extends ExtensionForm {
     }
 
     private HPacket createPacket(byte[] data) {
-        HPacket packet = new HPacket("RenderRoom", HMessage.Direction.TOSERVER);
-        packet.appendInt(data.length);
-        packet.appendBytes(data);
-        return packet;
+        if (normalmode.isSelected()) {
+            HPacket packet = new HPacket("RenderRoom", HMessage.Direction.TOSERVER);
+            packet.appendInt(data.length);
+            packet.appendBytes(data);
+            return packet;
+        } else if (bypassmode.isSelected()) {
+            String base64Image = Base64.getEncoder().encodeToString(data);
+            String rot13Image = applyRot13(base64Image);
+            return new HPacket("RenderRoom", HMessage.Direction.TOSERVER, "", rot13Image);
+        }
+        return null;
+    }
+
+    private String applyRot13(String input) {
+        StringBuilder result = new StringBuilder();
+        for (char c : input.toCharArray()) {
+            if (c >= 'a' && c <= 'z') {
+                result.append((char) ('a' + (c - 'a' + 13) % 26));
+            } else if (c >= 'A' && c <= 'Z') {
+                result.append((char) ('A' + (c - 'A' + 13) % 26));
+            } else {
+                result.append(c);
+            }
+        }
+        return result.toString();
     }
 }
