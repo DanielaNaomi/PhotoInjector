@@ -10,43 +10,44 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.text.Text?>
 
-<AnchorPane prefHeight="425.0" prefWidth="656.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="PhotoInjector">
+<AnchorPane prefHeight="523.0" prefWidth="656.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="PhotoInjector">
    <children>
-      <ImageView fx:id="imagepath" fitHeight="172.0" fitWidth="448.0" layoutX="50.0" layoutY="14.0" pickOnBounds="true" />
-      <Text layoutX="78.0" layoutY="254.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Width" />
-      <TextField fx:id="width" layoutX="123.0" layoutY="237.0" prefHeight="25.0" prefWidth="41.0" text="8" />
-      <Text layoutX="183.0" layoutY="254.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Height" />
-      <TextField fx:id="height" layoutX="232.0" layoutY="237.0" prefHeight="25.0" prefWidth="41.0" text="8" />
-      <CheckBox fx:id="activate_cbx" layoutX="183.0" layoutY="287.0" mnemonicParsing="false" text="Activate" />
-      <CheckBox fx:id="setcoords_cbx" layoutX="78.0" layoutY="287.0" mnemonicParsing="false" text="Set Coords" />
-      <ProgressBar fx:id="bar" layoutX="47.0" layoutY="200.0" prefHeight="18.0" prefWidth="448.0" progress="0.0" />
-      <CheckBox fx:id="always_on_top_cbx" layoutX="525.0" layoutY="358.0" mnemonicParsing="false" onAction="#toggleAlwaysOnTop" text="Always On Top" />
-      <Button fx:id="buttoninject" layoutX="525.0" layoutY="250.0" mnemonicParsing="false" onAction="#injectphoto" prefHeight="41.0" prefWidth="112.0" text="Inject" />
-      <Button layoutX="525.0" layoutY="198.0" mnemonicParsing="false" onAction="#importphoto" prefHeight="41.0" prefWidth="112.0" text="Import" />
-      <RadioButton fx:id="leftdirection" layoutX="200.0" layoutY="386.0" mnemonicParsing="false" selected="true" text="Left">
+      <ImageView fx:id="imagepath" fitHeight="267.0" fitWidth="448.0" layoutX="50.0" layoutY="14.0" pickOnBounds="true" />
+      <Text layoutX="78.0" layoutY="351.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Width" />
+      <TextField fx:id="width" layoutX="123.0" layoutY="334.0" prefHeight="25.0" prefWidth="41.0" text="8" />
+      <Text layoutX="183.0" layoutY="351.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Height" />
+      <TextField fx:id="height" layoutX="232.0" layoutY="334.0" prefHeight="25.0" prefWidth="41.0" text="8" />
+      <CheckBox fx:id="activate_cbx" layoutX="318.0" layoutY="384.0" mnemonicParsing="false" text="Activate" />
+      <CheckBox fx:id="setcoords_cbx" layoutX="78.0" layoutY="384.0" mnemonicParsing="false" text="Set Coords" />
+      <ProgressBar fx:id="bar" layoutX="47.0" layoutY="297.0" prefHeight="18.0" prefWidth="448.0" progress="0.0" />
+      <CheckBox fx:id="always_on_top_cbx" layoutX="525.0" layoutY="455.0" mnemonicParsing="false" onAction="#toggleAlwaysOnTop" text="Always On Top" />
+      <Button fx:id="buttoninject" layoutX="525.0" layoutY="347.0" mnemonicParsing="false" onAction="#injectphoto" prefHeight="41.0" prefWidth="112.0" text="Inject" />
+      <Button layoutX="525.0" layoutY="295.0" mnemonicParsing="false" onAction="#importphoto" prefHeight="41.0" prefWidth="112.0" text="Import" />
+      <RadioButton fx:id="leftdirection" layoutX="200.0" layoutY="483.0" mnemonicParsing="false" selected="true" text="Left">
          <toggleGroup>
             <ToggleGroup fx:id="directions" />
          </toggleGroup>
       </RadioButton>
-      <RadioButton fx:id="rightdirection" layoutX="265.0" layoutY="385.0" mnemonicParsing="false" text="Right" toggleGroup="$directions" />
-      <RadioButton fx:id="posterfurni" layoutX="50.0" layoutY="385.0" mnemonicParsing="false" selected="true" text="Poster">
+      <RadioButton fx:id="rightdirection" layoutX="265.0" layoutY="482.0" mnemonicParsing="false" text="Right" toggleGroup="$directions" />
+      <RadioButton fx:id="posterfurni" layoutX="50.0" layoutY="482.0" mnemonicParsing="false" selected="true" text="Poster">
          <toggleGroup>
             <ToggleGroup fx:id="furnitype" />
          </toggleGroup>
       </RadioButton>
-      <RadioButton fx:id="photofurni" layoutX="125.0" layoutY="385.0" mnemonicParsing="false" text="Photo" toggleGroup="$furnitype" />
-      <Text layoutX="525.0" layoutY="327.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Delay" />
-      <TextField fx:id="delay" layoutX="572.0" layoutY="310.0" prefHeight="25.0" prefWidth="64.0" text="32000" />
-      <Text layoutX="83.0" layoutY="371.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Photo Type" />
-      <Text layoutX="224.0" layoutY="371.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Directions" />
-      <RadioButton fx:id="normalmode" layoutX="335.0" layoutY="385.0" mnemonicParsing="false" selected="true" text="Normal">
+      <RadioButton fx:id="photofurni" layoutX="125.0" layoutY="482.0" mnemonicParsing="false" text="Photo" toggleGroup="$furnitype" />
+      <Text layoutX="525.0" layoutY="424.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Delay" />
+      <TextField fx:id="delay" layoutX="572.0" layoutY="407.0" prefHeight="25.0" prefWidth="64.0" text="32000" />
+      <Text layoutX="83.0" layoutY="468.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Photo Type" />
+      <Text layoutX="224.0" layoutY="468.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Directions" />
+      <RadioButton fx:id="normalmode" layoutX="335.0" layoutY="482.0" mnemonicParsing="false" selected="true" text="Normal">
          <toggleGroup>
             <ToggleGroup fx:id="injectsmodes" />
          </toggleGroup>
       </RadioButton>
-      <RadioButton fx:id="bypassmode" layoutX="415.0" layoutY="385.0" mnemonicParsing="false" text="Bypass" toggleGroup="$injectsmodes" />
-      <Text layoutX="372.0" layoutY="371.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Inject Mode" />
-      <Text layoutX="295.0" layoutY="254.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Reduce Quality" />
-      <TextField fx:id="reducequality" layoutX="388.0" layoutY="238.0" prefHeight="25.0" prefWidth="41.0" text="100" />
+      <RadioButton fx:id="bypassmode" layoutX="415.0" layoutY="482.0" mnemonicParsing="false" text="Bypass" toggleGroup="$injectsmodes" />
+      <Text layoutX="372.0" layoutY="468.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Inject Mode" />
+      <Text layoutX="295.0" layoutY="351.0" strokeType="OUTSIDE" strokeWidth="0.0" text="Reduce Quality" />
+      <TextField fx:id="reducequality" layoutX="388.0" layoutY="335.0" prefHeight="25.0" prefWidth="41.0" text="100" />
+      <CheckBox fx:id="fixedaspectratio" layoutX="178.0" layoutY="384.0" mnemonicParsing="false" text="Fixed Aspect Ratio" />
    </children>
 </AnchorPane>

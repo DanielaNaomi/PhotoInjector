@@ -28,7 +28,7 @@ import java.util.List;
 @ExtensionInfo(
         Title = "PhotoInjector",
         Description = "Inject photos into retros",
-        Version = "1.4",
+        Version = "1.5",
         Author = "DanielaNaomi"
 )
 
@@ -56,10 +56,12 @@ public class PhotoInjector extends ExtensionForm {
     public ToggleGroup injectsmodes;
     public RadioButton bypassmode;
     public TextField reducequality;
+    public CheckBox fixedaspectratio;
     private boolean isrunning = false;
     private int counter = 0;
     private BufferedImage currentImage;
     public String state = "General";
+    private double imageAspectRatio = 1.0;
 
     @Override
     protected void initExtension() {
@@ -71,6 +73,21 @@ public class PhotoInjector extends ExtensionForm {
 
         setupClipboardShortcut();
         setupTextFieldValidation();
+        setupAspectRatioHandling();
+    }
+
+    private void setupAspectRatioHandling() {
+        fixedaspectratio.selectedProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue && currentImage != null) {
+                updateAspectRatio();
+            }
+        });
+    }
+
+    private void updateAspectRatio() {
+        if (currentImage != null) {
+            imageAspectRatio = (double) currentImage.getWidth() / currentImage.getHeight();
+        }
     }
 
     public void toggleAlwaysOnTop() {
@@ -91,12 +108,24 @@ public class PhotoInjector extends ExtensionForm {
         width.textProperty().addListener((observable, oldValue, newValue) -> {
             if (!newValue.matches("\\d*")) {
                 width.setText(newValue.replaceAll("\\D", ""));
+            } else if (!newValue.isEmpty() && fixedaspectratio.isSelected() && currentImage != null) {
+                int newWidth = Integer.parseInt(newValue);
+                int newHeight = (int) Math.round(newWidth / imageAspectRatio);
+                if (height.getText().isEmpty() || !height.getText().equals(String.valueOf(newHeight))) {
+                    height.setText(String.valueOf(newHeight));
+                }
             }
         });
 
         height.textProperty().addListener((observable, oldValue, newValue) -> {
             if (!newValue.matches("\\d*")) {
                 height.setText(newValue.replaceAll("\\D", ""));
+            } else if (!newValue.isEmpty() && fixedaspectratio.isSelected() && currentImage != null) {
+                int newHeight = Integer.parseInt(newValue);
+                int newWidth = (int) Math.round(newHeight * imageAspectRatio);
+                if (width.getText().isEmpty() || !width.getText().equals(String.valueOf(newWidth))) {
+                    width.setText(String.valueOf(newWidth));
+                }
             }
         });
 
@@ -178,6 +207,12 @@ public class PhotoInjector extends ExtensionForm {
                 Platform.runLater(() -> {
                     Image fxImage = convertToFXImage(currentImage);
                     imagepath.setImage(fxImage);
+
+                    updateAspectRatio();
+                    if (fixedaspectratio.isSelected()) {
+                        width.setText(String.valueOf(currentImage.getWidth() / PART_SIZE + 1));
+                        height.setText(String.valueOf(currentImage.getHeight() / PART_SIZE + 1));
+                    }
                 });
             }
         } catch (UnsupportedFlavorException | IOException e) {
@@ -239,6 +274,12 @@ public class PhotoInjector extends ExtensionForm {
                     currentImage = reduceImageQuality(originalImage);
                     Image fxImage = convertToFXImage(currentImage);
                     imagepath.setImage(fxImage);
+
+                    updateAspectRatio();
+                    if (fixedaspectratio.isSelected()) {
+                        width.setText(String.valueOf(currentImage.getWidth() / PART_SIZE + 1));
+                        height.setText(String.valueOf(currentImage.getHeight() / PART_SIZE + 1));
+                    }
                 } else {
                     System.out.println("Unable to read image file: " + selectedFile.getName());
                 }
