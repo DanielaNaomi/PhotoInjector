@@ -28,7 +28,7 @@ import java.util.List;
 @ExtensionInfo(
         Title = "PhotoInjector",
         Description = "Inject photos into retros",
-        Version = "1.5",
+        Version = "1.6",
         Author = "DanielaNaomi"
 )
 
@@ -427,59 +427,68 @@ public class PhotoInjector extends ExtensionForm {
     }
 
     private void updateCoordinates() {
-        String[] parts = startcoords.split(" ");
-        String[] wParts = parts[0].split("=")[1].split(",");
-        String[] lParts = parts[1].split("=")[1].split(",");
-        String direction = parts[2];
+        Thread delayThread = new Thread(() -> {
+            try {
+                Thread.sleep(500);
 
-        int w1 = Integer.parseInt(wParts[0]);
-        int w2 = Integer.parseInt(wParts[1]);
-        int l1 = Integer.parseInt(lParts[0]);
-        int l2 = Integer.parseInt(lParts[1]);
+                String[] parts = startcoords.split(" ");
+                String[] wParts = parts[0].split("=")[1].split(",");
+                String[] lParts = parts[1].split("=")[1].split(",");
+                String direction = parts[2];
 
-        if (direction.equals("l")) {
-            if (posterfurni.isSelected()) {
-                if (leftdirection.isSelected()) {
-                    w2 -= 1;
-                    l1 += 4;
-                    l2 -= 2;
-                } else if (rightdirection.isSelected()) {
-                    w2 += 1;
-                    l1 -= 4;
-                    l2 += 2;
+                int w1 = Integer.parseInt(wParts[0]);
+                int w2 = Integer.parseInt(wParts[1]);
+                int l1 = Integer.parseInt(lParts[0]);
+                int l2 = Integer.parseInt(lParts[1]);
+
+                if (direction.equals("l")) {
+                    if (posterfurni.isSelected()) {
+                        if (leftdirection.isSelected()) {
+                            w2 -= 1;
+                            l1 += 4;
+                            l2 -= 2;
+                        } else if (rightdirection.isSelected()) {
+                            w2 += 1;
+                            l1 -= 4;
+                            l2 += 2;
+                        }
+                    } else if (photofurni.isSelected()) {
+                        if (leftdirection.isSelected()) {
+                            l1 += 7;
+                            l2 -= 4;
+                        } else if (rightdirection.isSelected()) {
+                            l1 -= 7;
+                            l2 += 4;
+                        }
+                    }
+                    startcoords = String.format(":w=%d,%d l=%d,%d l", w1, w2, l1, l2);
+                } else if (direction.equals("r")) {
+                    if (posterfurni.isSelected()) {
+                        if (leftdirection.isSelected()) {
+                            w1 += 2;
+                            l1 -= 12;
+                            l2 -= 6;
+                        } else if (rightdirection.isSelected()) {
+                            w1 -= 2;
+                            l1 += 12;
+                            l2 += 6;
+                        }
+                    } else if (photofurni.isSelected()) {
+                        if (leftdirection.isSelected()) {
+                            l1 += 7;
+                            l2 += 4;
+                        } else if (rightdirection.isSelected()) {
+                            l1 -= 7;
+                            l2 -= 4;
+                        }
+                    }
+                    startcoords = String.format(":w=%d,%d l=%d,%d r", w1, w2, l1, l2);
                 }
-            } else if (photofurni.isSelected()) {
-                if (leftdirection.isSelected()) {
-                    l1 += 7;
-                    l2 -= 4;
-                } else if (rightdirection.isSelected()) {
-                    l1 -= 7;
-                    l2 += 4;
-                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-            startcoords = String.format(":w=%d,%d l=%d,%d l", w1, w2, l1, l2);
-        } else if (direction.equals("r")) {
-            if (posterfurni.isSelected()) {
-                if (leftdirection.isSelected()) {
-                    w1 += 2;
-                    l1 -= 12;
-                    l2 -= 6;
-                } else if (rightdirection.isSelected()) {
-                    w1 -= 2;
-                    l1 += 12;
-                    l2 += 6;
-                }
-            } else if (photofurni.isSelected()) {
-                if (leftdirection.isSelected()) {
-                    l1 += 7;
-                    l2 += 4;
-                } else if (rightdirection.isSelected()) {
-                    l1 -= 7;
-                    l2 -= 4;
-                }
-            }
-            startcoords = String.format(":w=%d,%d l=%d,%d r", w1, w2, l1, l2);
-        }
+        });
+        delayThread.start();
     }
 
     private void resetToInitialCoords() {
